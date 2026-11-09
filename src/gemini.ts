@@ -71,18 +71,7 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 		throw new Error('Could not connect to Gemini. Check your internet connection and try again.');
 	}
 
-	if (!response.ok) {
-		if (response.status === 400 || response.status === 404) {
-			throw new Error('Gemini rejected the request. Check the selected model in CodeMentor settings.');
-		}
-		if (response.status === 401 || response.status === 403) {
-			throw new Error('Gemini did not accept this API key. Run “CodeMentor: Set Gemini API Key” to replace it.');
-		}
-		if (response.status === 429) {
-			throw new Error('Gemini rate limit or quota reached. Wait a little and try again.');
-		}
-		throw new Error(`Gemini request failed with HTTP ${response.status}.`);
-	}
+	if (!response.ok) throw new Error(await describeApiError(response));
 
 	const payload: unknown = await response.json();
 	const text = extractResponseText(payload);
@@ -94,6 +83,37 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 	}
 	if (!isAnalysisResult(parsed)) throw new Error('Gemini returned an incomplete result. Please run the analysis again.');
 	return mode === 'explain' ? { ...parsed, improvementSummary: '', improvedCode: '' } : parsed;
+}
+
+async function describeApiError(response: Response): Promise<string> {
+	let message = '';
+	try {
+		const payload = await response.json() as { error?: { message?: unknown; status?: unknown } };
+		if (typeof payload.error?.message === 'string') message = payload.error.message;
+	} catch {
+		// Use the HTTP status below when Gemini does not return a JSON error body.
+	}
+	const detail = message.toLowerCase();
+	if (/api.?key|credential/.test(detail) && /(invalid|not valid|expired|revoked|missing)/.test(detail)) {
+		return 'Gemini did not accept this API key. Run “CodeMentor: Set Gemini API Key” and enter a valid Gemini API key.';
+	}
+	if (response.status === 400) {
+		return 'Gemini rejected the request. Check that the model ID in CodeMentor settings is available to your API key.';
+	}
+	if (response.status === 401) {
+		return 'Gemini did not accept this API key. Run “CodeMentor: Set Gemini API Key” and enter a valid Gemini API key.';
+	}
+	if (response.status === 403) {
+		return 'Gemini denied access. Check the API key restrictions and confirm the Gemini API is enabled for its project.';
+	}
+	if (response.status === 404) {
+		return 'Gemini could not find this model. Check the model ID in CodeMentor settings.';
+	}
+	if (response.status === 429) {
+		return 'Gemini rate limit or quota reached. Check your Google AI Studio quota, then try again.';
+	}
+	if (response.status >= 500) return 'Gemini is temporarily unavailable. Wait a moment and try again.';
+	return `Gemini request failed with HTTP ${response.status}.`;
 }
 
 function extractResponseText(payload: unknown): string {
