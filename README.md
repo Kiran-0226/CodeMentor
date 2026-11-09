@@ -1,35 +1,60 @@
 # CodeMentor
 
-A VS Code extension that helps you understand selected code and consider better alternatives, powered by Gemini.
+CodeMentor is a VS Code extension that explains selected code and suggests a better option using Google Gemini.
 
-## Current setup
+## Features
 
-- TypeScript-based VS Code extension scaffold
-- Command: **CodeMentor: Explain and Improve Selection**
-- Analysis mode setting: `both` (default), `explain`, or `improve`
-- Gemini model setting is configurable; API integration is the next implementation step
+- Explain code, suggest an improvement, or do both.
+- Review results in a VS Code panel beside the editor.
+- Copy suggested code or choose **Replace selection** to apply it.
+- Save your Gemini API key in VS Code SecretStorage.
+- Analyze only the selected code; CodeMentor does not read or upload the rest of your file.
 
-## Run the extension
+## Requirements
 
-1. Install Node.js and npm.
-2. Run `npm install` in this folder.
-3. Open this folder in VS Code and press `F5`.
-4. In the Extension Development Host, select code and run **CodeMentor: Explain and Improve Selection** from the Command Palette.
+- VS Code 1.85 or later
+- Node.js 22 or later for development and packaging
+- A Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
-## GitHub setup
+## Install and use
 
-The local Git repository is initialized in this project. To connect it to GitHub, create an empty repository named `CodeMentor` in your GitHub account, then run:
+1. Install dependencies: `npm install`.
+2. Open this folder in VS Code and press `F5` to launch the Extension Development Host.
+3. In the new window, run **CodeMentor: Set Gemini API Key** from the Command Palette and enter your key.
+4. Select code, right-click, and choose **CodeMentor: Explain and Improve Selection**. You can also run that command from the Command Palette.
+5. Review the explanation and suggestion. Choose **Replace selection** only when you want to apply it.
+
+The first request sends the selected text and its language identifier to Google’s Gemini API. The API key is sent to Google for authentication and is stored locally using VS Code SecretStorage. Do not select secrets or code you are not allowed to send to an external AI service.
+
+## Settings
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `codementor.analysisMode` | `both` | `both`, `explain`, or `improve` |
+| `codementor.geminiModel` | `gemini-3.8-flash` | Gemini model ID used for analysis |
+
+Use **CodeMentor: Clear Gemini API Key** to remove the saved key. If a model is retired or unavailable to your account, change `codementor.geminiModel` in VS Code Settings.
+
+## Build and package
+
+```sh
+npm run compile
+npm run package
+```
+
+The package command creates a `.vsix` file. Install it in VS Code with **Extensions: Install from VSIX...** or `code --install-extension codementor-0.0.1.vsix`.
+
+## GitHub and Marketplace
+
+The project has a local Git repository. Create an empty GitHub repository named `CodeMentor` and connect it with:
 
 ```sh
 git remote add origin https://github.com/YOUR_USERNAME/CodeMentor.git
 git push -u origin main
 ```
 
-Do not add a README or `.gitignore` on GitHub when creating it; those files are already present locally.
+Publishing to the Visual Studio Marketplace requires a registered Marketplace publisher and an access token. The VSIX can be installed locally without publishing.
 
-## Planned first features
+## License
 
-1. Securely collect and store a Gemini API key through VS Code SecretStorage.
-2. Send selected code and its language to Gemini.
-3. Show an explanation and an improved alternative in a VS Code view.
-4. Add packaging and Marketplace publishing after the core flow works.
+MIT

@@ -5,6 +5,7 @@
       "name": "Run CodeMentor Extension",
       "type": "extensionHost",
       "request": "launch",
+      "preLaunchTask": "npm: compile",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/out/**/*.js"]
     }

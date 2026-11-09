@@ -3,7 +3,7 @@
   "displayName": "CodeMentor",
   "description": "Understand your code and explore better alternatives with Gemini.",
   "version": "0.0.1",
-  "publisher": "your-publisher-name",
+  "publisher": "kiran0226",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -19,8 +19,25 @@
       {
         "command": "codementor.analyzeSelection",
         "title": "CodeMentor: Explain and Improve Selection"
+      },
+      {
+        "command": "codementor.setGeminiApiKey",
+        "title": "CodeMentor: Set Gemini API Key"
+      },
+      {
+        "command": "codementor.clearGeminiApiKey",
+        "title": "CodeMentor: Clear Gemini API Key"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codementor.analyzeSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@1"
+        }
+      ]
+    },
     "configuration": {
       "title": "CodeMentor",
       "properties": {
@@ -32,7 +49,7 @@
         },
         "codementor.geminiModel": {
           "type": "string",
-          "default": "gemini-2.5-flash",
+          "default": "gemini-3.8-flash",
           "description": "Gemini model used for code analysis."
         }
       }
@@ -41,11 +58,23 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^4.1.0",
     "typescript": "^5.3.0"
+  },
+  "overrides": {
+    "@vscode/vsce": {
+      "minimatch": "^11.0.1"
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Kiran-0226/CodeMentor.git"
   }
 }
