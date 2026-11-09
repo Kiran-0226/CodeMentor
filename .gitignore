@@ -1,0 +1,8 @@
+node_modules/
+out/
+.vscode-test/
+.env
+.env.*
+!.env.example
+*.vsix
+npm-debug.log*

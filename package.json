@@ -1,0 +1,51 @@
+{
+  "name": "codementor",
+  "displayName": "CodeMentor",
+  "description": "Understand your code and explore better alternatives with Gemini.",
+  "version": "0.0.1",
+  "publisher": "your-publisher-name",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:codementor.analyzeSelection"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codementor.analyzeSelection",
+        "title": "CodeMentor: Explain and Improve Selection"
+      }
+    ],
+    "configuration": {
+      "title": "CodeMentor",
+      "properties": {
+        "codementor.analysisMode": {
+          "type": "string",
+          "enum": ["both", "explain", "improve"],
+          "default": "both",
+          "description": "Choose whether CodeMentor explains code, suggests improvements, or does both."
+        },
+        "codementor.geminiModel": {
+          "type": "string",
+          "default": "gemini-2.5-flash",
+          "description": "Gemini model used for code analysis."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0"
+  }
+}
