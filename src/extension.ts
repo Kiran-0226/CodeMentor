@@ -91,6 +91,8 @@ export function activate(context: vscode.ExtensionContext): void {
 				);
 				showAnalysis(context, result, {
 					mode,
+					language,
+					selectedCharacterCount: code.length,
 					apply: async replacement => {
 						const document = await vscode.workspace.openTextDocument(uri);
 						if (document.version !== originalVersion || document.getText(originalSelection) !== code) {

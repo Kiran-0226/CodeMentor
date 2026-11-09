@@ -4,30 +4,72 @@ import { AnalysisMode, AnalysisResult } from './gemini';
 
 interface PanelOptions {
 	mode: AnalysisMode;
+	language: string;
+	selectedCharacterCount: number;
 	apply: (replacement: string) => Promise<boolean>;
 }
 
+interface CurrentAnalysis {
+	result: AnalysisResult;
+	options: PanelOptions;
+}
+
+let currentPanel: vscode.WebviewPanel | undefined;
+let currentAnalysis: CurrentAnalysis | undefined;
+let currentPanelReady = false;
+
 export function showAnalysis(context: vscode.ExtensionContext, result: AnalysisResult, options: PanelOptions): void {
+	currentAnalysis = { result, options };
+	const panel = currentPanel ?? createPanel(context);
+	panel.reveal(vscode.ViewColumn.Beside, true);
+	if (currentPanelReady) void postCurrentAnalysis(panel);
+}
+
+function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
 	const panel = vscode.window.createWebviewPanel(
 		'codementor.analysis',
 		'CodeMentor Analysis',
 		vscode.ViewColumn.Beside,
-		{ enableScripts: true, retainContextWhenHidden: false, localResourceRoots: [] }
+		{ enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [] }
 	);
-	const nonce = createNonce();
+	currentPanel = panel;
+	currentPanelReady = false;
 	const listener = panel.webview.onDidReceiveMessage(async message => {
-		if (!message || typeof message !== 'object') return;
+		const analysis = currentAnalysis;
+		if (!analysis || !message || typeof message !== 'object') return;
 		if (message.type === 'ready') {
-			void panel.webview.postMessage({ type: 'analysis', result, canApply: options.mode !== 'explain' && Boolean(result.improvedCode) });
-		} else if (message.type === 'copy' && message.code === result.improvedCode && result.improvedCode) {
-			await vscode.env.clipboard.writeText(result.improvedCode);
+			currentPanelReady = true;
+			void postCurrentAnalysis(panel);
+		} else if (message.type === 'copy' && message.code === analysis.result.improvedCode && analysis.result.improvedCode) {
+			await vscode.env.clipboard.writeText(analysis.result.improvedCode);
 			void vscode.window.showInformationMessage('Suggested code copied to clipboard.');
-		} else if (message.type === 'apply' && message.code === result.improvedCode && result.improvedCode) {
-			if (await options.apply(result.improvedCode)) panel.dispose();
+		} else if (message.type === 'apply' && message.code === analysis.result.improvedCode && analysis.result.improvedCode) {
+			if (await analysis.options.apply(analysis.result.improvedCode)) panel.dispose();
 		}
 	});
-	panel.onDidDispose(() => listener.dispose());
+	panel.onDidDispose(() => {
+		listener.dispose();
+		if (currentPanel === panel) {
+			currentPanel = undefined;
+			currentAnalysis = undefined;
+			currentPanelReady = false;
+		}
+	});
+	const nonce = createNonce();
 	panel.webview.html = getHtml(nonce, context.extension.packageJSON.displayName as string);
+	return panel;
+}
+
+async function postCurrentAnalysis(panel: vscode.WebviewPanel): Promise<void> {
+	if (!currentAnalysis || currentPanel !== panel) return;
+	const { result, options } = currentAnalysis;
+	await panel.webview.postMessage({
+		type: 'analysis',
+		result,
+		language: options.language,
+		selectedCharacterCount: options.selectedCharacterCount,
+		canApply: options.mode !== 'explain' && Boolean(result.improvedCode)
+	});
 }
 
 function getHtml(nonce: string, title: string): string {
@@ -60,6 +102,7 @@ function getHtml(nonce: string, title: string): string {
   <h1>CodeMentor</h1>
   <p class="subtle">Gemini analysis of your selected code</p>
   <p id="modelUsed" class="subtle"></p>
+  <p id="sourceInfo" class="subtle"></p>
   <section id="explanationSection" class="panel">
     <h2>What this code does</h2>
     <div id="explanation" class="text" role="article"></div>
@@ -81,6 +124,7 @@ function getHtml(nonce: string, title: string): string {
       if (message.type !== 'analysis') return;
       const result = message.result;
       document.getElementById('modelUsed').textContent = 'Model: ' + result.modelUsed;
+      document.getElementById('sourceInfo').textContent = 'Analyzed ' + message.selectedCharacterCount + ' characters (' + message.language + ')';
       document.getElementById('explanation').textContent = result.explanation;
       const improvement = document.getElementById('improvementSection');
       const hasImprovement = Boolean(result.improvedCode);
