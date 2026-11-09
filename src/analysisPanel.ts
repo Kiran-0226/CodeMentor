@@ -15,7 +15,6 @@ export function showAnalysis(context: vscode.ExtensionContext, result: AnalysisR
 		{ enableScripts: true, retainContextWhenHidden: false, localResourceRoots: [] }
 	);
 	const nonce = createNonce();
-	panel.webview.html = getHtml(nonce, context.extension.packageJSON.displayName as string);
 	const listener = panel.webview.onDidReceiveMessage(async message => {
 		if (!message || typeof message !== 'object') return;
 		if (message.type === 'ready') {
@@ -28,6 +27,7 @@ export function showAnalysis(context: vscode.ExtensionContext, result: AnalysisR
 		}
 	});
 	panel.onDidDispose(() => listener.dispose());
+	panel.webview.html = getHtml(nonce, context.extension.packageJSON.displayName as string);
 }
 
 function getHtml(nonce: string, title: string): string {
@@ -75,7 +75,6 @@ function getHtml(nonce: string, title: string): string {
   <script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     let suggestion = '';
-    vscode.postMessage({ type: 'ready' });
     window.addEventListener('message', event => {
       const message = event.data;
       if (message.type !== 'analysis') return;
@@ -94,6 +93,7 @@ function getHtml(nonce: string, title: string): string {
         document.getElementById('copyButton').onclick = () => vscode.postMessage({ type: 'copy', code: suggestion });
       }
     });
+    vscode.postMessage({ type: 'ready' });
   </script>
 </body>
 </html>`;
