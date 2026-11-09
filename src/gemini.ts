@@ -12,6 +12,7 @@ interface AnalyzeCodeOptions {
 	mode: AnalysisMode;
 	language: string;
 	code: string;
+	onRetry?: (attempt: number) => void;
 }
 
 export async function analyzeCode(options: AnalyzeCodeOptions): Promise<AnalysisResult> {
@@ -41,16 +42,17 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 		'</selected_code>'
 	].join('\n');
 
-	let response: Response;
-	try {
-		response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+	const response = await generateContentWithRetry(
+		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+		{
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
 			body: JSON.stringify({
 				contents: [{ role: 'user', parts: [{ text: prompt }] }],
 				generationConfig: {
-					temperature: 0.2,
+					maxOutputTokens: 4096,
 					responseMimeType: 'application/json',
+					thinkingConfig: { thinkingLevel: 'LOW' },
 					responseSchema: {
 						type: 'OBJECT',
 						properties: {
@@ -61,15 +63,10 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 						required: ['explanation', 'improvementSummary', 'improvedCode']
 					}
 				}
-			}),
-			signal: AbortSignal.timeout(60_000)
-		});
-	} catch (error) {
-		if (error instanceof Error && error.name === 'TimeoutError') {
-			throw new Error('Gemini took too long to respond. Try again with a smaller selection.');
-		}
-		throw new Error('Could not connect to Gemini. Check your internet connection and try again.');
-	}
+			})
+		},
+		options.onRetry
+	);
 
 	if (!response.ok) throw new Error(await describeApiError(response));
 
@@ -83,6 +80,39 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 	}
 	if (!isAnalysisResult(parsed)) throw new Error('Gemini returned an incomplete result. Please run the analysis again.');
 	return mode === 'explain' ? { ...parsed, improvementSummary: '', improvedCode: '' } : parsed;
+}
+
+async function generateContentWithRetry(
+	url: string,
+	request: Omit<RequestInit, 'signal'>,
+	onRetry?: (attempt: number) => void
+): Promise<Response> {
+	const maxAttempts = 3;
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		let response: Response;
+		try {
+			response = await fetch(url, { ...request, signal: AbortSignal.timeout(60_000) });
+		} catch (error) {
+			if (error instanceof Error && error.name === 'TimeoutError' && attempt < maxAttempts) {
+				onRetry?.(attempt + 1);
+				await delay(attempt * 1_000 + Math.floor(Math.random() * 500));
+				continue;
+			}
+			if (error instanceof Error && error.name === 'TimeoutError') {
+				throw new Error('Gemini timed out after 3 attempts. This can happen during temporary high demand. Try again in a minute.');
+			}
+			throw new Error('Could not connect to Gemini. Check your internet connection and try again.');
+		}
+
+		if (response.status !== 503 || attempt === maxAttempts) return response;
+		onRetry?.(attempt + 1);
+		await delay(attempt * 1_000 + Math.floor(Math.random() * 500));
+	}
+	throw new Error('Gemini could not complete the request. Try again in a minute.');
+}
+
+function delay(milliseconds: number): Promise<void> {
+	return new Promise(resolve => setTimeout(resolve, milliseconds));
 }
 
 async function describeApiError(response: Response): Promise<string> {

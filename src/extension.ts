@@ -77,7 +77,14 @@ export function activate(context: vscode.ExtensionContext): void {
 			try {
 				const result = await vscode.window.withProgress(
 					{ location: vscode.ProgressLocation.Notification, title: 'CodeMentor is analyzing your selection…', cancellable: false },
-					() => analyzeCode({ apiKey: apiKey!, model, mode, language, code })
+					progress => analyzeCode({
+						apiKey: apiKey!,
+						model,
+						mode,
+						language,
+						code,
+						onRetry: attempt => progress.report({ message: `Temporary Gemini delay. Retrying (${attempt}/3)…` })
+					})
 				);
 				showAnalysis(context, result, {
 					mode,
