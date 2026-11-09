@@ -13,7 +13,9 @@
   "activationEvents": [
     "onCommand:codementor.analyzeSelection",
     "onCommand:codementor.setGeminiApiKey",
-    "onCommand:codementor.clearGeminiApiKey"
+    "onCommand:codementor.clearGeminiApiKey",
+    "onCommand:codementor.toggleLiveAnalysis",
+    "onCommand:codementor.setLearningLevel"
   ],
   "keybindings": [
     {
@@ -37,6 +39,14 @@
       {
         "command": "codementor.clearGeminiApiKey",
         "title": "CodeMentor: Clear Gemini API Key"
+      },
+      {
+        "command": "codementor.toggleLiveAnalysis",
+        "title": "CodeMentor: Toggle Live Analysis"
+      },
+      {
+        "command": "codementor.setLearningLevel",
+        "title": "CodeMentor: Set Learning Level"
       }
     ],
     "menus": {
@@ -66,6 +76,17 @@
           "type": "string",
           "default": "gemini-3.6-flash",
           "description": "Model to try if the primary Gemini model returns a temporary server error. Set this to an empty string to disable fallback."
+      },
+      "codementor.liveAnalysis": {
+        "type": "boolean",
+        "default": false,
+        "description": "Automatically re-analyze the selected code after you edit it. Only the selected code is sent to Gemini."
+      },
+      "codementor.learningLevel": {
+        "type": "string",
+        "enum": ["beginner", "intermediate", "advanced"],
+        "default": "beginner",
+        "description": "Adjust explanations and suggestions for your programming experience level."
         }
       }
     }
