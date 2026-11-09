@@ -32,8 +32,9 @@ The first request sends the selected text and its language identifier to Googleâ
 | --- | --- | --- |
 | `codementor.analysisMode` | `both` | `both`, `explain`, or `improve` |
 | `codementor.geminiModel` | `gemini-3.8-flash` | Gemini model ID used for analysis |
+| `codementor.fallbackGeminiModel` | `gemini-3.6-flash` | Model tried after repeated temporary server errors; set to an empty string to disable |
 
-Use **CodeMentor: Clear Gemini API Key** to remove the saved key. If a model is retired or unavailable to your account, change `codementor.geminiModel` in VS Code Settings.
+Use **CodeMentor: Clear Gemini API Key** to remove the saved key. If a model is retired or unavailable to your account, change `codementor.geminiModel` or `codementor.fallbackGeminiModel` in VS Code Settings. The analysis panel identifies which model returned the result.
 
 ## Build and package
 

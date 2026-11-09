@@ -61,6 +61,11 @@
           "type": "string",
           "default": "gemini-3.8-flash",
           "description": "Gemini model used for code analysis."
+        },
+        "codementor.fallbackGeminiModel": {
+          "type": "string",
+          "default": "gemini-3.6-flash",
+          "description": "Model to try if the primary Gemini model returns a temporary server error. Set this to an empty string to disable fallback."
         }
       }
     }

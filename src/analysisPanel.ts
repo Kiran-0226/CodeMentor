@@ -59,6 +59,7 @@ function getHtml(nonce: string, title: string): string {
 <body>
   <h1>CodeMentor</h1>
   <p class="subtle">Gemini analysis of your selected code</p>
+  <p id="modelUsed" class="subtle"></p>
   <section id="explanationSection" class="panel">
     <h2>What this code does</h2>
     <div id="explanation" class="text" role="article"></div>
@@ -79,6 +80,7 @@ function getHtml(nonce: string, title: string): string {
       const message = event.data;
       if (message.type !== 'analysis') return;
       const result = message.result;
+      document.getElementById('modelUsed').textContent = 'Model: ' + result.modelUsed;
       document.getElementById('explanation').textContent = result.explanation;
       const improvement = document.getElementById('improvementSection');
       const hasImprovement = Boolean(result.improvedCode);

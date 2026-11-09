@@ -69,6 +69,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			const mode = vscode.workspace.getConfiguration('codementor').get<'both' | 'explain' | 'improve'>('analysisMode', 'both');
 			const model = vscode.workspace.getConfiguration('codementor').get<string>('geminiModel', 'gemini-3.8-flash');
+			const fallbackModel = vscode.workspace.getConfiguration('codementor').get<string>('fallbackGeminiModel', 'gemini-3.6-flash');
 			const language = editor.document.languageId;
 			const uri = editor.document.uri;
 			const originalVersion = editor.document.version;
@@ -80,10 +81,12 @@ export function activate(context: vscode.ExtensionContext): void {
 					progress => analyzeCode({
 						apiKey: apiKey!,
 						model,
+						fallbackModel,
 						mode,
 						language,
 						code,
-						onRetry: attempt => progress.report({ message: `Temporary Gemini delay. Retrying (${attempt}/3)…` })
+						onRetry: attempt => progress.report({ message: `Temporary Gemini delay. Retrying (${attempt}/3)…` }),
+						onFallback: fallback => progress.report({ message: `Primary model is unavailable. Trying ${fallback}…` })
 					})
 				);
 				showAnalysis(context, result, {

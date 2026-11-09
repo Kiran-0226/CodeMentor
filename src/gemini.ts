@@ -4,6 +4,7 @@ export interface AnalysisResult {
 	explanation: string;
 	improvementSummary: string;
 	improvedCode: string;
+	modelUsed: string;
 }
 
 interface AnalyzeCodeOptions {
@@ -12,7 +13,9 @@ interface AnalyzeCodeOptions {
 	mode: AnalysisMode;
 	language: string;
 	code: string;
+	fallbackModel?: string;
 	onRetry?: (attempt: number) => void;
+	onFallback?: (model: string) => void;
 }
 
 export async function analyzeCode(options: AnalyzeCodeOptions): Promise<AnalysisResult> {
@@ -42,9 +45,7 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 		'</selected_code>'
 	].join('\n');
 
-	const response = await generateContentWithRetry(
-		`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-		{
+	const request: Omit<RequestInit, 'signal'> = {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
 			body: JSON.stringify({
@@ -64,9 +65,21 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 					}
 				}
 			})
-		},
-		options.onRetry
-	);
+		};
+	let modelUsed = model;
+	let response = await generateContentWithRetry(modelUrl(model), request, options.onRetry);
+	const fallbackModel = options.fallbackModel?.trim() ?? '';
+	if (response.status === 503 && fallbackModel && fallbackModel !== model) {
+		if (!/^[A-Za-z0-9._-]+$/.test(fallbackModel)) {
+			throw new Error('The fallback Gemini model setting contains unsupported characters.');
+		}
+		options.onFallback?.(fallbackModel);
+		response = await generateContentWithRetry(modelUrl(fallbackModel), request, options.onRetry);
+		modelUsed = fallbackModel;
+		if (response.status === 503) {
+			throw new Error(`Gemini returned a temporary server error for both ${model} and ${fallbackModel}. Try again later.`);
+		}
+	}
 
 	if (!response.ok) throw new Error(await describeApiError(response));
 
@@ -79,7 +92,13 @@ export async function analyzeCode(options: AnalyzeCodeOptions): Promise<Analysis
 		throw new Error('Gemini returned an unreadable result. Please run the analysis again.');
 	}
 	if (!isAnalysisResult(parsed)) throw new Error('Gemini returned an incomplete result. Please run the analysis again.');
-	return mode === 'explain' ? { ...parsed, improvementSummary: '', improvedCode: '' } : parsed;
+	return mode === 'explain'
+		? { ...parsed, improvementSummary: '', improvedCode: '', modelUsed }
+		: { ...parsed, modelUsed };
+}
+
+function modelUrl(model: string): string {
+	return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 }
 
 async function generateContentWithRetry(
