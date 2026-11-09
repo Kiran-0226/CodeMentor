@@ -59,7 +59,7 @@
         },
         "codementor.geminiModel": {
           "type": "string",
-          "default": "gemini-3.8-flash",
+          "default": "gemini-3.5-flash",
           "description": "Gemini model used for code analysis."
         },
         "codementor.fallbackGeminiModel": {
