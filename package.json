@@ -11,7 +11,17 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:codementor.analyzeSelection"
+    "onCommand:codementor.analyzeSelection",
+    "onCommand:codementor.setGeminiApiKey",
+    "onCommand:codementor.clearGeminiApiKey"
+  ],
+  "keybindings": [
+    {
+      "command": "codementor.analyzeSelection",
+      "key": "ctrl+alt+m",
+      "mac": "cmd+alt+m",
+      "when": "editorTextFocus && editorHasSelection"
+    }
   ],
   "main": "./out/extension.js",
   "contributes": {

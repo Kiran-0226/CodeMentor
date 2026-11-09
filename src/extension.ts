@@ -6,6 +6,22 @@ const API_KEY_SECRET = 'codementor.geminiApiKey';
 const MAX_CODE_LENGTH = 30_000;
 
 export function activate(context: vscode.ExtensionContext): void {
+	const analyzeStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	analyzeStatus.text = '$(sparkle) CodeMentor';
+	analyzeStatus.tooltip = 'Explain and improve selected code (Ctrl+Alt+M)';
+	analyzeStatus.command = 'codementor.analyzeSelection';
+	context.subscriptions.push(analyzeStatus);
+
+	const updateAnalyzeStatus = (editor: vscode.TextEditor | undefined): void => {
+		if (editor && !editor.selection.isEmpty) analyzeStatus.show();
+		else analyzeStatus.hide();
+	};
+	updateAnalyzeStatus(vscode.window.activeTextEditor);
+	context.subscriptions.push(
+		vscode.window.onDidChangeActiveTextEditor(updateAnalyzeStatus),
+		vscode.window.onDidChangeTextEditorSelection(event => updateAnalyzeStatus(event.textEditor))
+	);
+
 	context.subscriptions.push(
 		vscode.commands.registerCommand('codementor.setGeminiApiKey', async () => {
 			const key = await vscode.window.showInputBox({

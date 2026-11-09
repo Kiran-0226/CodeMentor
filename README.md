@@ -21,7 +21,7 @@ CodeMentor is a VS Code extension that explains selected code and suggests a bet
 1. Install dependencies: `npm install`.
 2. Open this folder in VS Code and press `F5` to launch the Extension Development Host.
 3. In the new window, run **CodeMentor: Set Gemini API Key** from the Command Palette and enter your key.
-4. Select code, right-click, and choose **CodeMentor: Explain and Improve Selection**. You can also run that command from the Command Palette.
+4. Select code and use the **CodeMentor** status bar action, press `Ctrl+Alt+M` (`Cmd+Option+M` on macOS), right-click and choose **CodeMentor: Explain and Improve Selection**, or run it from the Command Palette.
 5. Review the explanation and suggestion. Choose **Replace selection** only when you want to apply it.
 
 The first request sends the selected text and its language identifier to Google’s Gemini API. The API key is sent to Google for authentication and is stored locally using VS Code SecretStorage. Do not select secrets or code you are not allowed to send to an external AI service.
